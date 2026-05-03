@@ -1,0 +1,47 @@
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.user
+*.sln.docstates
+*/Debug/
+*/Release/
+x64/
+*/x64/
+*.dbmdl
+*.tlog
+
+# Qt 自动生成
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+*.pro.user
+*.pro.user.*
+Makefile
+Makefile.*
+
+# 编译临时文件
+*.o
+*.obj
+*.exe
+*.app
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.exp
+*.pdb
+*.ilk
+*.idb
+*.sdf
+*.ipch
+
+# 备份和临时文件
+*~
+*.swp
+*.bak
+Thumbs.db
+
+# 编译输出目录（你之前手动删的那些）
+梅比乌斯/
+梅比乌斯1.0/
