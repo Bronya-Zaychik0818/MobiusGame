@@ -14,6 +14,13 @@ class MobiusGame : public QWidget
 
 public:
     explicit MobiusGame(QWidget* parent = nullptr);
+public slots: 
+    void startGame();
+    void restartGame();
+signals:
+    void gameStarted();
+    void gameOver();
+
 private:
     QPixmap backgroundPixmap;
     QColor backgroundColor;
@@ -22,6 +29,7 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
 
 private:
+    enum class GameState { WaitingToStart, Playing, GameOver };
     enum Direction { Up, Down, Left, Right };
 
     void initGame();
@@ -33,6 +41,7 @@ private:
     Direction dir;
     QPoint food;
     bool isGameOver;
+    GameState gameState;
     int score;
 
     static const int cellSize = 15;

@@ -32,9 +32,6 @@
     <QtMoc Include="Mobius.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtRcc Include="Mobius.qrc">
-      <Filter>Resource Files</Filter>
-    </QtRcc>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -48,5 +45,8 @@
     <QtMoc Include="QtWidgetsApplication.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>
