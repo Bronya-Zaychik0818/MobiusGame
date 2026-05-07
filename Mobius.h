@@ -17,6 +17,10 @@ public:
 public slots: 
     void startGame();
     void restartGame();
+    void setDifficultyAndStart(int interval);
+    void startSlow();
+    void startNormal();
+    void startFast();
 signals:
     void gameStarted();
     void gameOver();
@@ -43,7 +47,7 @@ private:
     bool isGameOver;
     GameState gameState;
     int score;
-
+    int speedInterval = 150;
     static const int cellSize = 15;
     static const int gridWidth = 40;
     static const int gridHeight = 30;

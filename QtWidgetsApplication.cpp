@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QDebug>
+#include <QMessageBox>
 QtWidgetsApplication::QtWidgetsApplication(QWidget* parent)
     : QMainWindow(parent)
 {
@@ -10,20 +12,41 @@ QtWidgetsApplication::QtWidgetsApplication(QWidget* parent)
     auto* central = new QWidget(this);
     auto* layout = new QVBoxLayout(central);
     MobiusGame* game = new MobiusGame(this);
-    auto* startBtn = new QPushButton(QStringLiteral("开始游戏"), this);
+    auto* slowBtn = new QPushButton(QStringLiteral("慢速 (简单)"), this);//速度选择按钮
+    auto* normalBtn = new QPushButton(QStringLiteral("普通 (中等)"), this);
+    auto* fastBtn = new QPushButton(QStringLiteral("快速 (困难)"), this);
     auto* restartBtn = new QPushButton(QStringLiteral("重新开始"), this);
     layout->addWidget(game);
-    layout->addWidget(startBtn);
+    layout->addWidget(slowBtn);
+    layout->addWidget(normalBtn);
+    layout->addWidget(fastBtn);
     layout->addWidget(restartBtn);
     setCentralWidget(central);
-    startBtn->setStyleSheet("background-color: #4CAF50; color: white; font-size: 18px; padding: 8px;");
-    restartBtn->setStyleSheet("background-color: #f44336; color: white; font-size: 18px; padding: 8px;");
-    connect(startBtn, &QPushButton::clicked, game, &MobiusGame::startGame);
-    connect(restartBtn, &QPushButton::clicked, game, &MobiusGame::restartGame);
+    slowBtn->setStyleSheet("background-color: #81C784; color: white; font-size: 16px; padding: 6px;");
+    normalBtn->setStyleSheet("background-color: #4CAF50; color: white; font-size: 16px; padding: 6px;");
+    fastBtn->setStyleSheet("background-color: #E53935; color: white; font-size: 16px; padding: 6px;");
+    restartBtn->setStyleSheet("background-color: #f44336; color: white; font-size: 16px; padding: 6px;");
     restartBtn->setEnabled(false);
-    connect(game, &MobiusGame::gameOver, restartBtn, [restartBtn]() { restartBtn->setEnabled(true); });
-    connect(game, &MobiusGame::gameStarted, restartBtn, [restartBtn]() { restartBtn->setEnabled(false); });
-
+    slowBtn->setEnabled(true);
+    normalBtn->setEnabled(true);
+    fastBtn->setEnabled(true);
+    connect(game, &MobiusGame::gameStarted, this, [=]() {
+        slowBtn->setEnabled(false);
+        normalBtn->setEnabled(false);
+        fastBtn->setEnabled(false);
+        restartBtn->setEnabled(false);
+        });
+    connect(game, &MobiusGame::gameOver, this, [=]() {
+        slowBtn->setEnabled(true);
+        normalBtn->setEnabled(true);
+        fastBtn->setEnabled(true);
+        restartBtn->setEnabled(true);
+        game->setFocus();
+        });
+    connect(slowBtn, &QPushButton::clicked, game, &MobiusGame::startSlow);
+    connect(normalBtn, &QPushButton::clicked, game, &MobiusGame::startNormal);
+    connect(fastBtn, &QPushButton::clicked, game, &MobiusGame::startFast);
+    connect(restartBtn, &QPushButton::clicked, game, &MobiusGame::restartGame);
 }
 QtWidgetsApplication::~QtWidgetsApplication()
 {
@@ -45,20 +68,36 @@ MobiusGame::MobiusGame(QWidget* parent) : QWidget(parent) {//传递参数。
     connect(timer, &QTimer::timeout, this, &MobiusGame::updateGame);//Qt通信方式？采用计时器来确定梅比乌斯多久动一次。
     timer->stop();
 }
+void MobiusGame::startSlow()
+{setDifficultyAndStart(200);
+}
+void MobiusGame::startNormal()
+{setDifficultyAndStart(150);
+}
+void MobiusGame::startFast()
+{setDifficultyAndStart(100);
+}
+void MobiusGame::setDifficultyAndStart(int interval)//速度选择。
+{
+     qDebug() << "setDifficultyAndStart called with interval:" << interval;
+        speedInterval = interval;
+        startGame();
+}
 void MobiusGame::startGame()//开始游戏。
 {
     initGame();
     gameState = GameState::Playing;
-    timer->start(150);
+    timer->start(speedInterval);
     emit gameStarted();
     setFocus();  
     update();
+    qDebug() << "startGame called";
 }
 void MobiusGame::restartGame()//重开游戏。
 {
     initGame();
     gameState = GameState::Playing;
-    timer->start(150);
+    timer->start(speedInterval);
     emit gameStarted();
     setFocus();
     update();
@@ -135,12 +174,6 @@ void MobiusGame::keyPressEvent(QKeyEvent* event) {//这里特意防止梅比乌�
     case Qt::Key_D: case Qt::Key_Right:
         if (dir != Left) dir = Right;
         break;
-    case Qt::Key_Space:
-        if (isGameOver) {
-            initGame();   // 重开游戏。
-            timer->start();
-        }
-        break;
     default:
         QWidget::keyPressEvent(event);
     }
@@ -154,15 +187,12 @@ void MobiusGame::paintEvent(QPaintEvent*) {
     else {
         painter.fillRect(rect(), backgroundColor);
     }
-    if (gameState == GameState::WaitingToStart) {//画开始菜单。
-        painter.setPen(Qt::white);
-        painter.setFont(QFont("Arial", 30, QFont::Bold));
-        painter.setPen(Qt::cyan);
-        painter.drawText(rect(), Qt::AlignCenter, QStringLiteral("贪吃的梅比乌斯"));
+    if (gameState == GameState::WaitingToStart) {
+        painter.setPen(Qt::blue);
+        painter.setFont(QFont("Microsoft YaHei", 20, QFont::Bold));
+        painter.drawText(rect(), Qt::AlignCenter, QStringLiteral("贪吃的梅比乌斯\n请在下方选择难度"));
         return;
     }
-    QFont font("Microsoft YaHei", 30, QFont::Bold);
-    painter.setFont(font);
     painter.fillRect(rect(), QColor(0, 0, 0, 100));
     painter.setBrush(Qt::red);//画梅比乌斯的食物。
     painter.setPen(Qt::NoPen);
