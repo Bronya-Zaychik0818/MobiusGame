@@ -64,12 +64,10 @@ MobiusGame::MobiusGame(QWidget* parent) : QWidget(parent) {//传递参数。
         backgroundColor = QColor(30, 30, 30);
     }
     m_backgroundMusic = new QSoundEffect(this);//背景音乐。
-    QString musicPath = QCoreApplication::applicationDirPath() + "/bgm.wav";
-    m_backgroundMusic->setSource(QUrl::fromLocalFile(musicPath));
+    m_backgroundMusic->setSource(QUrl::fromLocalFile("./bgm.wav"));
     m_backgroundMusic->setLoopCount(QSoundEffect::Infinite);
     m_backgroundMusic->setVolume(0.5);
-    QString path = QCoreApplication::applicationDirPath() + "/Mobius.jpg";
-    backgroundPixmap = QPixmap(path);
+    QPixmap backgroundPixmap("./Mobius.jpg");
     timer = new QTimer(this);//计时器。
     connect(timer, &QTimer::timeout, this, &MobiusGame::updateGame);//Qt通信方式？采用计时器来确定梅比乌斯多久动一次。
     timer->stop();
