@@ -1,10 +1,12 @@
-﻿#include "Mobius.h"
+﻿#include <QSoundEffect>
+#include "Mobius.h"
 #include "QtWidgetsApplication.h"
 #include <filesystem>
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QDebug>
 #include <QMessageBox>
+#include <QCoreApplication>
 QtWidgetsApplication::QtWidgetsApplication(QWidget* parent)
     : QMainWindow(parent)
 {
@@ -61,9 +63,13 @@ MobiusGame::MobiusGame(QWidget* parent) : QWidget(parent) {//传递参数。
     if (backgroundPixmap.isNull()) {
         backgroundColor = QColor(30, 30, 30);
     }
+    m_backgroundMusic = new QSoundEffect(this);//背景音乐。
+    QString musicPath = QCoreApplication::applicationDirPath() + "/bgm.wav";
+    m_backgroundMusic->setSource(QUrl::fromLocalFile(musicPath));
+    m_backgroundMusic->setLoopCount(QSoundEffect::Infinite);
+    m_backgroundMusic->setVolume(0.5);
     QString path = QCoreApplication::applicationDirPath() + "/Mobius.jpg";
     backgroundPixmap = QPixmap(path);
-    qDebug() << "图片加载状态:" << backgroundPixmap.isNull() << "路径:" << path;
     timer = new QTimer(this);//计时器。
     connect(timer, &QTimer::timeout, this, &MobiusGame::updateGame);//Qt通信方式？采用计时器来确定梅比乌斯多久动一次。
     timer->stop();
@@ -91,7 +97,6 @@ void MobiusGame::startGame()//开始游戏。
     emit gameStarted();
     setFocus();  
     update();
-    qDebug() << "startGame called";
 }
 void MobiusGame::restartGame()//重开游戏。
 {
@@ -100,9 +105,23 @@ void MobiusGame::restartGame()//重开游戏。
     timer->start(speedInterval);
     emit gameStarted();
     setFocus();
+    startBackgroundMusic();
     update();
 }
+void MobiusGame::startBackgroundMusic()//播放音乐。
+{
+    if (m_backgroundMusic && !m_backgroundMusic->isPlaying()) {
+        m_backgroundMusic->play();
+    }
+}
+void MobiusGame::stopBackgroundMusic()
+{
+    if (m_backgroundMusic) {
+        m_backgroundMusic->stop();
+    }
+}
 void MobiusGame::initGame() {//初始化梅比乌斯。
+    startBackgroundMusic();
     snake.clear();
     int startX = gridWidth / 2;
     int startY = gridHeight / 2;//梅比乌斯在地图中间偏左的位置。
@@ -113,6 +132,7 @@ void MobiusGame::initGame() {//初始化梅比乌斯。
     isGameOver = false;
     score = 0;
     spawnFood();
+    spawnObstacles();
 }
 void MobiusGame::updateGame() {//键盘控制梅比乌斯的移动。
     if (gameState != GameState::Playing) return;
@@ -134,7 +154,10 @@ void MobiusGame::updateGame() {//键盘控制梅比乌斯的移动。
     snake.prepend(newHead);
     if (ateFood) {//检查吃饭。
         score++;
-        spawnFood(); }
+        spawnFood(); 
+        obstacleCount = 5 + score / 5;
+        spawnObstacles();
+    }
     else {
         snake.removeLast();
     }
@@ -144,6 +167,12 @@ void MobiusGame::updateGame() {//键盘控制梅比乌斯的移动。
             timer->stop();
             break;
         }
+    }
+    if (obstacles.contains(newHead)) {
+        gameState = GameState::GameOver;
+        timer->stop();
+        update();
+        return;
     }
     update();
     emit gameOver();
@@ -155,6 +184,20 @@ void MobiusGame::spawnFood() {
         pos.ry() = QRandomGenerator::global()->bounded(gridHeight);
     } while (snake.contains(pos)); // 食物不会生成在梅比乌斯身上。
     food = pos;
+}
+void MobiusGame::spawnObstacles(){
+    obstacles.clear();
+    for (int i = 0; i < obstacleCount; ++i) {
+        QPoint pos;
+        int attempts = 0;
+        do {
+            pos.rx() = QRandomGenerator::global()->bounded(gridWidth);
+            pos.ry() = QRandomGenerator::global()->bounded(gridHeight);
+            ++attempts;
+            if (attempts > 1000) break;
+        } while (snake.contains(pos) || pos == food || obstacles.contains(pos));
+        obstacles.append(pos);
+    }
 }
 void MobiusGame::keyPressEvent(QKeyEvent* event) {//这里特意防止梅比乌斯原地掉头。
     if (gameState != GameState::Playing) {
@@ -197,6 +240,11 @@ void MobiusGame::paintEvent(QPaintEvent*) {
     painter.setBrush(Qt::red);//画梅比乌斯的食物。
     painter.setPen(Qt::NoPen);
     painter.drawRect(food.x() * cellSize, food.y() * cellSize, cellSize, cellSize);
+    painter.setBrush(Qt::black);  // 画梅比乌斯的障碍物。
+    painter.setPen(Qt::NoPen);
+    for (const QPoint& obs : obstacles) {
+        painter.drawRect(obs.x() * cellSize, obs.y() * cellSize, cellSize, cellSize);
+    }
     for (int i = 0; i < snake.size(); ++i) {//画梅比乌斯。
         if (i == 0) {
             painter.setBrush(QColor(0, 200, 0));

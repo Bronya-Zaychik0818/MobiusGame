@@ -8,6 +8,7 @@
 #include <QKeyEvent>
 #include <QPainter>
 
+class QSoundEffect;
 class MobiusGame : public QWidget
 {
     Q_OBJECT
@@ -35,11 +36,15 @@ protected:
 private:
     enum class GameState { WaitingToStart, Playing, GameOver };
     enum Direction { Up, Down, Left, Right };
-
+    QList<QPoint> obstacles;
+    int obstacleCount = 3;
+    void spawnObstacles();
     void initGame();
     void updateGame();
     void spawnFood();
-
+    void startBackgroundMusic();
+    void stopBackgroundMusic();
+    QSoundEffect* m_backgroundMusic;
     QTimer* timer;
     QList<QPoint> snake;
     Direction dir;
